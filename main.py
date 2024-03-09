@@ -2,15 +2,20 @@ import pygame
 import moderngl as mgl
 import numpy as np
 from sys import exit
+from os import listdir
 #use fragcoords for not converging pixels as uv for iamge
 class App:
-    def __init__(self,WINDOW_SIZE):
-        self.SCREEN_SIZE = WINDOW_SIZE
-        self.aspect_ratio = WINDOW_SIZE[1]/WINDOW_SIZE[0]
+    def __init__(self,WINDOW_SIZE=(0,0)):
+        
         pygame.init()
         pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION,3)
         pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION,3)
-        pygame.display.set_mode(WINDOW_SIZE,pygame.DOUBLEBUF|pygame.OPENGL)
+        if WINDOW_SIZE != (0,0):
+            pygame.display.set_mode(WINDOW_SIZE,pygame.DOUBLEBUF|pygame.OPENGL)
+        else:
+            pygame.display.set_mode((0,0),pygame.DOUBLEBUF|pygame.OPENGL|pygame.FULLSCREEN)
+        self.SCREEN_SIZE = pygame.display.get_window_size()
+        self.aspect_ratio = self.SCREEN_SIZE[1]/self.SCREEN_SIZE[0]
         self.ctx = mgl.create_context()
         self.clock = pygame.time.Clock()
         self.vbo = self.ctx.buffer(np.array([
@@ -59,9 +64,14 @@ class App:
             self.offset[0] += self.speed*delta*self.zoom
         
         if keys[pygame.K_PLUS]:
-            self.diverge_bound += 0.01*delta
+            self.diverge_bound += 0.01*delta*self.diverge_bound
         elif keys[pygame.K_MINUS]:
-            self.diverge_bound -= 0.01*delta
+            self.diverge_bound -= 0.01*delta*self.diverge_bound
+
+    def take_screenshot(self,path):
+        n_of_screenshots = len([img for img in listdir(path) if img.split(".")[-1] == "png"])
+        test = pygame.image.frombytes(self.ctx.screen.read(),pygame.display.get_window_size(),"RGB",True)
+        pygame.image.save(test,path+f"screenshot{n_of_screenshots}.png")
 
     def run(self):
         self.zoom = 1
@@ -73,9 +83,13 @@ class App:
         self.program["aspect_ratio"] = self.aspect_ratio
         while True:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                    self.destroy()                
-
+                if event.type == pygame.QUIT:
+                    self.destroy()      
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.destroy()
+                    elif event.key == pygame.K_1:
+                        self.take_screenshot("screenshots/")
                 elif event.type == pygame.MOUSEWHEEL:
                     self.zoom += event.y*delta*0.001*self.zoom
 
@@ -88,8 +102,9 @@ class App:
             self.render()
             pygame.display.flip()
 
-            pygame.display.set_caption(f"FPS: {round(self.clock.get_fps())},ZOOM: {round(self.zoom,1)},Bound Number:{round(self.diverge_bound,1)},Offset{self.offset}")
+            #pygame.display.set_caption(f"FPS: {round(self.clock.get_fps())},ZOOM: {round(self.zoom,2)},Bound Number:{round(self.diverge_bound,1)},Offset{self.offset}")
             delta = self.clock.tick(30)
+    
 if __name__ == '__main__':
     app = App((1280,720))
     app.run()
