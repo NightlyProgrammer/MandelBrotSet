@@ -19,14 +19,12 @@ class App:
         ],dtype="f4"))
         self.program = self.read_program("shaders","mandelbrot")
         self.vao = self.ctx.vertex_array(self.program,[(self.vbo,"2f","in_position")])
-
-        self.texture = self.convert_surface_to_texture(pygame.image.load("images/pexels-pixabay-69932.jpg").convert())
     
-    def convert_surface_to_texture(self,surf):
+    """def convert_surface_to_texture(self,surf):
         texture = pygame.transform.flip(surf,flip_x=False,flip_y=True)#flip on y to convert to opengl coordinate system
         texture = self.ctx.texture(size=texture.get_size(),components=3,#3 color values(r,g,b)
                                    data=pygame.image.tostring(texture,'RGB'))
-        return texture
+        return texture"""
 
     def read_program(self,path,name):
         vert_name,frag_name = name.split('|')[0],name.split('|')[-1]
